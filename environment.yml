@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3
   - typer
-  - s3fs
-  - netcdf4
-  - pip
+  - boto3
+  - tqdm
+#  - netcdf4
+#  - pip
