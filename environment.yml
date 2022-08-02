@@ -1,0 +1,9 @@
+name: goesr_grabber
+channels:
+  - conda-forge
+dependencies:
+  - python=3
+  - typer
+  - s3fs
+  - netcdf4
+  - pip
