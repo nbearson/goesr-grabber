@@ -6,5 +6,6 @@ dependencies:
   - typer
   - boto3
   - rich
+  - pyinstaller
 #  - netcdf4
 #  - pip
