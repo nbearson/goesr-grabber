@@ -5,7 +5,6 @@ from fileinput import filename
 import typer
 from datetime import datetime, timedelta
 from enum import Enum
-#from tqdm import tqdm
 import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
@@ -109,10 +108,7 @@ def main(satellite:GOESRSatellite=GOESRSatellite.goes16,
          start_time:datetime=datetime(year=2022, month=8, day=1, hour=18),
          end_time:datetime=datetime(year=2022, month=8, day=1, hour=19),
          parallel_downloads:int=1,
-         progress_bar:bool=True,
          dry_run:bool=True):
-
-    progress_bar = False
 
     all_objects = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=parallel_downloads) as executor:
