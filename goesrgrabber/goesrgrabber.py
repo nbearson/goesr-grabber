@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from fileinput import filename
+#from fileinput import filename
 import typer
 from datetime import datetime, timedelta
 from enum import Enum
@@ -9,8 +9,8 @@ import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
 import concurrent.futures
-from threading import Event
-import signal
+#from threading import Event
+#import signal
 from rich.progress import (
     BarColumn,
     DownloadColumn,
@@ -68,13 +68,18 @@ def init_s3():
 def get_bucket(satellite):
     return f"noaa-{satellite}"
 
+import re
+def datetime_from_filename(filename):
+    match = re.search(r"_s[0-9]{4}[0-9]{3}[0-9]{2}[0-9]{2}[0-9]{2}", filename)
+    return datetime.strptime(match.group(0), "_s%Y%j%H%M%S")
+
 def get_file_list(satellite, product, start_time, end_time):
     s3 = init_s3()
     bucket = get_bucket(satellite)
 
     delta = end_time - start_time
     objlist = []
-    for hour in [start_time + timedelta(hours=i) for i in range((delta.days*24) + (delta.seconds // 3600))]:
+    for hour in [start_time + timedelta(hours=i) for i in range((delta.days*24) + (delta.seconds // 3600) + 1)]:
         prefix = f'{product}/{hour.strftime("%Y/%j/%H")}/'
         paginator = s3.get_paginator('list_objects_v2')
         operation_parameters = {'Bucket': bucket,
@@ -82,7 +87,10 @@ def get_file_list(satellite, product, start_time, end_time):
         page_iterator = paginator.paginate(**operation_parameters)
         for page in page_iterator:
             for obj in page['Contents']:
-                objlist.append(obj)
+                filename = filename_from_obj(obj)
+                dt = datetime_from_filename(filename)
+                if start_time <= dt <= end_time:
+                    objlist.append(obj)
     return objlist
 
 def filename_from_obj(obj):
@@ -96,12 +104,11 @@ def download_obj(obj, s3, bucket, progress):
 # https://github.com/Textualize/rich/blob/master/examples/downloader.py
     task = progress.add_task("download", filename=filename, total=filesize)
     s3.download_file(bucket, obj['Key'], filename, Callback=lambda bytes_transferred: progress.update(task, advance=bytes_transferred))
-#    else:
-#        print(f"{filename}")
-#    s3.download_file(bucket, obj['Key'], filename)
+
     progress.remove_task(task)
-    progress.print(filename)
     assert(filesize == os.path.getsize(filename))
+    progress.print(filename)
+
     return filename
 
 def main(satellite:GOESRSatellite=GOESRSatellite.goes16,
